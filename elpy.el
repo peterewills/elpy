@@ -1557,6 +1557,7 @@ else:
                   nil
                   'visible))
 
+;; TODO : add an evil operator for sending to shell
 (defun elpy-shell-send-region-or-buffer (&optional arg)
   "Send the active region or the buffer to the Python shell.
 
