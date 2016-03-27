@@ -1589,6 +1589,15 @@ code is executed."
       (message (concat "Removed if __main__ == '__main__' construct, "
                        "use a prefix argument to evaluate.")))))
 
+(evil-define-operator evil-elpy-send-code (beg end type)
+  "Send the region to the python shell."
+  :move-point nil
+  :repeat nil
+  (interactive "<R>")
+  (elpy-shell-get-or-create-process)
+  (python-shell-send-string (elpy-shell--region-without-indentation beg end))
+  (elpy-shell-display-buffer))
+
 (defun elpy-shell-send-current-statement ()
   "Send current statement to Python shell."
   (interactive)
