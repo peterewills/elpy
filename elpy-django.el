@@ -52,16 +52,14 @@ Best to set it to full path to 'manage.py' if it's available."
 (make-variable-buffer-local 'elpy-django-server-port)
 
 (defcustom elpy-django-server-command "runserver"
-  "When executing `elpy-django-runserver' what should be the server
-command to use."
+  "Server command to use when executing `elpy-django-runserver'."
   :type 'string
   :safe 'stringp
   :group 'elpy)
 (make-variable-buffer-local 'elpy-django-server-command)
 
 (defcustom elpy-django-always-prompt nil
-  "When non-nil, it will always prompt for extra arguments
-to pass with the chosen command."
+  "Whether to prompt for extra arguments to pass with the chosen command."
   :type 'boolean
   :safe 'booleanp
   :group 'elpy)
@@ -71,8 +69,9 @@ to pass with the chosen command."
                                                "loaddata" "sqlmigrate"
                                                "sqlsequencereset"
                                                "squashmigrations")
-  "Used to determine if we should prompt for arguments. Some commands
-require arguments in order for it to work."
+  "Used to determine if we should prompt for arguments.
+
+ Some commands require arguments in order for it to work."
   :type 'list
   :safe 'listp
   :group 'elpy)
@@ -86,7 +85,7 @@ require arguments in order for it to work."
     (define-key map (kbd "c") 'elpy-django-command)
     (define-key map (kbd "r") 'elpy-django-runserver)
     map)
-  "Key map for django extension")
+  "Key map for django extension.")
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helper Functions
@@ -118,7 +117,8 @@ require arguments in order for it to work."
               ;; cleanup [auth] and stuff
               (goto-char (point-min))
               (save-excursion
-                (replace-regexp "\\[.*\\]" ""))
+                (re-search-forward "\\[.*\\]")
+                (replace-match ""))
               (buffer-string))))
     ;; get a list of commands from the output of manage.py -h
     ;; What would be the pattern to optimize this ?
@@ -131,8 +131,10 @@ require arguments in order for it to work."
 ;;; User Functions
 
 (defun elpy-django-command (cmd)
-  "Prompt user for Django command. If called with `C-u',
-it will prompt for other flags/arguments to run."
+  "Prompt user for Django command.
+
+If CMD is non-nil (or with prefix argument), prompt for other flags/arguments
+ to run."
   (interactive (list (completing-read "Command: " (elpy-django--get-commands) nil nil)))
   ;; Called with C-u, variable is set or is a cmd that requires an argument
   (when (or current-prefix-arg
@@ -143,10 +145,11 @@ it will prompt for other flags/arguments to run."
 
 (defun elpy-django-runserver (arg)
   "Start the server and automatically add the ipaddr and port.
+
 Also create it's own special buffer so that we can have multiple
 servers running per project.
 
-When called with a prefix (C-u), it will prompt for additional args."
+If ARG is non-nil (or with  prefix argument), prompt for additional args."
   (interactive "P")
   (let* ((cmd (concat elpy-django-command " " elpy-django-server-command))
          (proj-root (file-name-base (directory-file-name (elpy-project-root))))
