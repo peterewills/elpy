@@ -54,7 +54,7 @@
 (require 'find-file-in-project)
 
 (defconst elpy-version "1.17.0"
-  "The version of the Elpy lisp code.")
+  "The version of the Elpy Lisp code.")
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; User customization
@@ -341,8 +341,11 @@ edited instead. Setting this variable to nil disables this feature."
   :group 'elpy)
 
 (defcustom elpy-test-django-with-manage nil
-  "Set to nil, elpy will use `elpy-test-django-runner-command',
-set to t elpy will use `elpy-test-django-runner-manage-command' and set the project root accordingly."
+  "Whether to use django's manage.py for test or not.
+
+If t, elpy will use `elpy-test-django-runner-manage-command' and set the project
+root accordingly.
+If nil, elpy will use `elpy-test-django-runner-command'."
   :type 'boolean
   :group 'elpy)
 
@@ -398,7 +401,7 @@ option is `pdb'."
                                             (propertize "r" 'face 'bold))
                                     'elpy-refactor))
     map)
-  "Key map for the refactor command")
+  "Key map for the refactor command.")
 
 (defvar elpy-mode-map
   (let ((map (make-sparse-keymap)))
@@ -727,7 +730,9 @@ json.dump(config, sys.stdout)
   "Note a configuration problem.
 
 This will show a message in the minibuffer that tells the user to
-use \\[elpy-config]."
+use \\[elpy-config].
+
+If FMT and ARGS are specified, use them to display a customized message."
   (let ((msg (if fmt
                  (apply #'format fmt args)
                "Elpy is not properly configured")))
@@ -770,6 +775,7 @@ a customize buffer, but has some more options."
   (message "Elpy %s (use M-x elpy-config for details)" elpy-version))
 
 (defun elpy-config--insert-help ()
+  "Insert help in Elpy customization buffer."
   (let ((start (point)))
     ;; Help display from `customize-browse'
     (widget-insert (format "\
@@ -803,7 +809,10 @@ item in another window.\n\n")
       (fill-region start (point)))))
 
 (defun elpy-config--insert-configuration-problems (&optional config)
-  "Insert help text and widgets for configuration problems."
+  "Insert help text and widgets for configuration problems.
+
+If CONFIG is specified, use it inplace of the default RPC config retrieved by
+`elpy-config--get-config'."
   (when (not config)
     (setq config (elpy-config--get-config)))
   (let* ((python-version (gethash "python_version" config))
@@ -1065,7 +1074,10 @@ virtual_env_short"
       config)))
 
 (defun elpy-config--insert-configuration-table (&optional config)
-  "Insert a table describing the current Elpy config."
+  "Insert a table describing the current Elpy config.
+
+If CONFIG is specified, use it inplace of the default RPC config retrieved by
+`elpy-config--get-config'."
   (when (not config)
     (setq config (elpy-config--get-config)))
   (let ((emacs-version (gethash "emacs_version" config))
@@ -1193,7 +1205,7 @@ PyPI, or nil if that's VERSION."
        ,@body)))
 
 (defun elpy-insert--para (&rest messages)
-  "Insert a bunch of text and then fill it."
+  "Insert MESSAGES as a bunch of text and then fill it."
   (let ((start (point)))
     (mapc (lambda (obj)
             (if (stringp obj)
@@ -1258,7 +1270,7 @@ PyPI, or nil if that's VERSION."
 ;;; Projects
 
 (defvar elpy-project--variable-name-history nil
-  "The history for `elpy-project--read-project-variable'")
+  "The history for `elpy-project--read-project-variable'.")
 
 (defun elpy-project-root ()
   "Return the root of the current buffer's project.
@@ -1341,7 +1353,7 @@ so that import package.module will pick up module.py."
       'elpy-project--variable-name-history))))
 
 (defun elpy-project--read-variable-value (prompt variable)
-  "Read the value for VARIABLE from the user."
+  "Read the value for VARIABLE from the user using PROMPT."
   (let ((custom-type (get variable 'custom-type)))
     (if custom-type
         (widget-prompt-value (if (listp custom-type)
@@ -1574,13 +1586,13 @@ Returns a full path name for that module."
 ;;; Syntax Checks
 
 (defun elpy-check (&optional whole-project-p)
-  "Run `python-check-command' on the current buffer's file,
+  "Run `python-check-command' on the current buffer's file.
 
-or the project root if WHOLE-PROJECT-P is non-nil (interactively,
-with a prefix argument)."
+If WHOLE-PROJECT-P is non-nil (or with a prefix argument), run
+`python-check-command' on the project root."
   (interactive "P")
   (when (not (buffer-file-name))
-    (error "Can't check a buffer without a file."))
+    (error "Can't check a buffer without a file"))
   (save-some-buffers (not compilation-ask-about-save) nil)
   (let ((process-environment (python-shell-calculate-process-environment))
         (exec-path (python-shell-calculate-exec-path))
@@ -1648,7 +1660,7 @@ with a prefix argument)."
 (defun elpy-goto-location (filename offset &optional other-window-p)
   "Show FILENAME at OFFSET to the user.
 
-If other-window-p is non-nil, show the same in other window."
+If OTHER-WINDOW-P is non-nil, show the same in other window."
   (ring-insert find-tag-marker-ring (point-marker))
   (let ((buffer (find-file-noselect filename)))
     (if other-window-p
@@ -1752,6 +1764,9 @@ indentation levels."
     (elpy--nav-move-line-vertically -1)))
 
 (defun elpy--nav-move-line-vertically (dir)
+  "Move the current line or active region vertically.
+
+DIR is the direction of motion (positive for forward, negative for backward)."
   (let* ((beg (point-at-bol))
          (end (point-at-bol 2))
          (col (current-column))
@@ -1762,6 +1777,7 @@ indentation levels."
     (goto-char (+ (point) col))))
 
 (defun elpy--nav-move-region-vertically (beg end dir)
+  "Move the region delimited by BEG and END vertically in the direction DIR."
   (let* ((point-before-mark (< (point) (mark)))
          (beg (save-excursion
                 (goto-char beg)
@@ -1935,6 +1951,7 @@ directory is not nil."
         (list top nil nil nil)))))
 
 (defun elpy-test--current-test-name ()
+  "Get the surrounding test function name."
   (let ((name (python-info-current-defun)))
     (if (and name
              (string-match "\\`\\([^.]+\\.[^.]+\\)\\." name))
@@ -2109,7 +2126,7 @@ prefix argument is given, prompt for a symbol from the user."
                   (elpy-doc--symbol-at-point)))))
     (if doc
         (elpy-doc--show doc)
-      (error "No documentation found."))))
+      (error "No documentation found"))))
 
 (defun elpy-doc--read-identifier-from-minibuffer (initial)
   "Read a pydoc-able identifier from the minibuffer."
@@ -2307,7 +2324,7 @@ overlays, too."
     (push ov elpy-multiedit-overlays)))
 
 (defun elpy-multiedit--overlays-in-p (beg end)
-  "Return t iff there are multiedit overlays between beg and end."
+  "Return t if there are multiedit overlays between BEG and END."
   (catch 'return
     (dolist (ov (overlays-in beg end))
       (when (overlay-get ov 'elpy-multiedit)
@@ -2364,8 +2381,8 @@ If multiedit is active, stop it."
 (defun elpy-multiedit-python-symbol-at-point (&optional use-symbol-p)
   "Edit all usages of the the Python symbol at point.
 
-With prefix arg, edit all syntactic usages of the symbol at
-point. This might include unrelated symbols that just share the
+With non-nil USE-SYMBOL-P (or prefix arg), edit all syntactic usages of the
+symbol at point. This might include unrelated symbols that just share the
 name."
   (interactive "P")
   (if (or elpy-multiedit-overlays
@@ -2489,7 +2506,7 @@ Also, switch to that buffer."
 (defun elpy-promise (success &optional error)
   "Return a new promise.
 
-A promise is an object with a success and error callback. If the
+A promise is an object with a SUCCESS and ERROR callback. If the
 promise is resolved using `elpy-promise-resolve', its success
 callback is called with the given value. The current buffer is
 restored, too.
@@ -2506,7 +2523,7 @@ not exist anymore."
           ))
 
 (defun elpy-promise-p (obj)
-  "Return non-nil if the argument is a promise object."
+  "Return non-nil if OBJ is a promise object."
   (and (vectorp obj)
        (= (length obj) 5)
        (eq (aref obj 0) elpy-promise-marker)))
@@ -2690,8 +2707,9 @@ Must be called in an elpy-rpc buffer."
   (puthash call-id promise elpy-rpc--backend-callbacks))
 
 (defun elpy-rpc--get-rpc-buffer ()
-  "Return the RPC buffer associated with the current buffer,
-creating one if necessary."
+  "Return the RPC buffer associated with the current buffer.
+
+Create a RPC buffer if necessary."
   (when (not (elpy-rpc--process-buffer-p elpy-rpc--buffer))
     (setq elpy-rpc--buffer
           (or (elpy-rpc--find-buffer (elpy-library-root)
@@ -2740,7 +2758,7 @@ died, this will kill the process and buffer."
   "Start a new RPC process and return the associated buffer."
   (when (and elpy-rpc-backend
              (not (stringp elpy-rpc-backend)))
-    (error "`elpy-rpc-backend' should be nil or a string."))
+    (error "`elpy-rpc-backend' should be nil or a string"))
   (elpy-rpc--cleanup-buffers)
   (let* ((full-python-command (executable-find python-command))
          (name (format " *elpy-rpc [project:%s python:%s]*"
@@ -2860,7 +2878,7 @@ RPC calls with the event."
                 (elpy-rpc--handle-unexpected-line line))))))))))
 
 (defun elpy-rpc--check-backend-version (rpc-version)
-  "Check that we are using the right version."
+  "Check that RPC-VERSION is coherent with Elpy current version."
   (when (not (equal rpc-version elpy-version))
     (elpy-insert--popup "*Elpy Version Mismatch*"
       (elpy-insert--header "Elpy Version Mismatch")
@@ -3371,9 +3389,8 @@ Make sure global-init is called first."
 It should not be necessary to see (Python Elpy yas company ElDoc) all the
 time.
 
-If you need your modeline, you can set the variable `elpy-remove-modeline-lighter' to nil
-"
-
+If you need your modeline, you can set the variable
+`elpy-remove-modeline-lighter' to nil."
   (interactive)
   (when elpy-remove-modeline-lighter
     (cond
@@ -3389,6 +3406,7 @@ If you need your modeline, you can set the variable `elpy-remove-modeline-lighte
 ;;; Module: Sane Defaults
 
 (defun elpy-module-sane-defaults (command &rest args)
+  "Module to set sane defaults."
   (pcase command
     (`buffer-init
      ;; Set `forward-sexp-function' to nil in python-mode. See
@@ -3551,8 +3569,8 @@ here, and return the \"name\" as used by the backend."
 
 Add parentheses in case ANNOTATION is \"class\", \"function\", or \"instance\",
 unless the completion is already looking at a left parenthesis,
-or unless NAME is a Python exception outside a reasonably formed raise statement,
-or unless NAME is no callable instance."
+or unless NAME is a Python exception outside a reasonably formed raise
+statement,or unless NAME is no callable instance."
   (when (not (looking-at-p "\("))
     (cond ((string= annotation "function")
            (insert "()")
@@ -3767,6 +3785,7 @@ display the current class and method instead."
        (kill-local-variable 'flymake-warning-re)))))
 
 (defun elpy-flymake-python-init ()
+  "Initialize Flymake."
   ;; Make sure it's not a remote buffer as flymake would not work
   (when (not (file-remote-p buffer-file-name))
     (let* ((temp-file (flymake-init-create-temp-buffer-copy
@@ -3777,15 +3796,13 @@ display the current class and method instead."
             "/"))))
 
 (defun elpy-flymake-next-error ()
-  "Move forward to the next Flymake error and show a
-description."
+  "Move forward to the next Flymake error and show a description."
   (interactive)
   (flymake-goto-next-error)
   (elpy-flymake-show-error))
 
 (defun elpy-flymake-previous-error ()
-  "Move backward to the previous Flymake error and show a
-description."
+  "Move backward to the previous Flymake error and show a description."
   (interactive)
   (flymake-goto-prev-error)
   (elpy-flymake-show-error))
