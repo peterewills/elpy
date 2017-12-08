@@ -169,7 +169,9 @@ These will be checked in turn. The first directory found is used."
                      elpy-project-find-svn-root))
   :group 'elpy)
 
-(make-obsolete-variable 'elpy-company-hide-modeline 'elpy-remove-modeline-lighter)
+(make-obsolete-variable 'elpy-company-hide-modeline
+                        'elpy-remove-modeline-lighter
+                        "1.10.0")
 (defcustom elpy-remove-modeline-lighter t
   "Non-nil if Elpy should remove most mode line display.
 
@@ -2243,7 +2245,7 @@ Also sort the imports in the import statement blocks."
 	  (elpy-importmagic-add-import choice nil))))
     ;; ask for unresolved aliases real names and add import for them
     (dolist (alias unresolved-aliases)
-      (let* ((object (read-string (format "Real name of \"%s\" alias: " alias nil)))
+      (let* ((object (read-string (format "Real name of \"%s\" alias: " alias)))
 	     (prompt (format "How to import \"%s\": " object))
 	     (choice (concat
 		      (elpy-importmagic--add-import-read-args object prompt nil)
@@ -3770,7 +3772,7 @@ display the current class and method instead."
      ;; COMPAT: Obsolete variable as of 24.4
      (if (boundp 'flymake-warning-predicate)
          (set (make-local-variable 'flymake-warning-predicate) "^W[0-9]")
-       (set (make-local-variable 'flymake-warning-re) "^W[0-9]"))
+       (set (make-local-variable 'flymake-warning-predicate) "^W[0-9]"))
 
      (when (and (buffer-file-name)
                 (executable-find python-check-command))
@@ -3782,7 +3784,7 @@ display the current class and method instead."
      ;; COMPAT: Obsolete variable as of 24.4
      (if (boundp 'flymake-warning-predicate)
          (kill-local-variable 'flymake-warning-predicate)
-       (kill-local-variable 'flymake-warning-re)))))
+       (kill-local-variable 'flymake-warning-predicate)))))
 
 (defun elpy-flymake-python-init ()
   "Initialize Flymake."
