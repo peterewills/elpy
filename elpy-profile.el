@@ -24,6 +24,8 @@
 
 ;;; Code:
 
+(require 'python)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; User customization
@@ -60,9 +62,9 @@
         (elpy-profile--display-profiling prof-file)))))
 
 (defun elpy-profile--file (file &optional in-dir dont-display)
-  "Profile asynchronously FILE and display the result using
-`elpy-profile-visualizer'.
+  "Profile asynchronously FILE and display the result.
 
+Use `elpy-profile-visualizer' to visualiez the result.
 If IN-DIR is non nil, profile result is saved in the same
 directory as the script.
 If DONT-DISPLAY is non nil, don't display the profile results."
@@ -87,8 +89,9 @@ If DONT-DISPLAY is non nil, don't display the profile results."
 
 (defun elpy-profile-buffer-or-region (&optional in-dir dont-display)
   "Profile asynchronously the active region or the current buffer
-and display the result using `elpy-profile-visualizer'.
+and display the result.
 
+Use `elpy-profile-visualizer' to visualize the result.
 If IN-DIR is non nil, profile result is saved in the same
 directory as the script.
 If DONT-DISPLAY is non nil, don't display the profile results."
