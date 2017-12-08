@@ -24,6 +24,8 @@
 ;;
 ;;; Code:
 
+(require 'python)
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; User customization
 
@@ -62,8 +64,7 @@ force the creation of dedicated shells for each buffers."
   :group 'elpy)
 
 (defcustom elpy-shell-echo-input t
-  "Whether to echo input sent to the Python shell as input in the
-shell buffer.
+  "Whether to echo input sent to the Python shell as input in the shell buffer.
 
 Truncation of long inputs can be controlled via
 `elpy-shell-echo-input-lines-head' and
@@ -90,7 +91,8 @@ in the Python shell."
   :group 'elpy)
 
 (defcustom elpy-shell-use-project-root t
-  "Whether to use project root as default directory when starting a Python shells.
+  "Whether to use project root as default directory when starting a Python
+shells.
 
 The project root is determined using `elpy-project-root`. If this variable is set to
 nil, the current directory is used instead."
@@ -104,10 +106,12 @@ nil, the current directory is used instead."
           "#\\s-*\\(?:In\\|Out\\)\\[.*\\]:"
           "\\)\\s-*$")
   "Regular expression for matching a line indicating the boundary
-of a cell (beginning or ending). By default, lines starting with
-``##`` are treated as a cell boundaries, as are the boundaries in
-Python files exported from IPython or Jupyter notebooks (e.g.,
-``# <markdowncell>``, ``# In[1]:'', or ``# Out[1]:``)."
+of a cell (beginning or ending).
+
+By default, lines starting with ``##`` are treated as a cell
+boundaries, as are the boundaries in Python files exported from
+IPython or Jupyter notebooks (e.g., ``# <markdowncell>``, ``#
+In[1]:'', or ``# Out[1]:``)."
   :type 'string
   :group 'elpy)
 
@@ -118,11 +122,12 @@ Python files exported from IPython or Jupyter notebooks (e.g.,
           "#\\s-*In\\[.*\\]:"
           "\\)\\s-*$")
   "Regular expression for matching a line indicating the
-beginning of a code cell. By default, lines starting with ``##``
-are treated as beginnings of a code cell, as are the code cell
-beginnings (and only the code cell beginnings) in Python files
-exported from IPython or Jupyter notebooks (e.g., ``#
-<codecell>`` or ``# In[1]:``).
+beginning of a code cell.
+
+By default, lines starting with ``##`` are treated as beginnings of a
+code cell, as are the code cell beginnings (and only the code cell
+beginnings) in Python files exported from IPython or Jupyter notebooks
+\(e.g., ``# <codecell>`` or ``# In[1]:``).
 
 Note that `elpy-shell-cell-boundary-regexp' must also match
 the code cell beginnings defined here."
@@ -135,7 +140,7 @@ the code cell beginnings defined here."
 (defun elpy-use-ipython (&optional ipython)
   "Set defaults to use IPython instead of the standard interpreter.
 
-With prefix arg, prompt for the command to use."
+If IPYTHON is non-nil (or with prefix arg), prompt for the command to use."
   (interactive (list (when current-prefix-arg
                        (read-file-name "IPython command: "))))
   (when (not ipython)
@@ -159,7 +164,7 @@ With prefix arg, prompt for the command to use."
           python-shell-prompt-output-regexp "Out\\[[0-9]+\\]: "
           python-shell-completion-setup-code
           "from IPython.core.completerlib import module_completion"
-          python-shell-completion-module-string-code
+          python-shell-completion-string-code
           "';'.join(module_completion('''%s'''))\n"
           python-shell-completion-string-code
           "';'.join(get_ipython().Completer.all_completions('''%s'''))\n"))
@@ -174,14 +179,14 @@ With prefix arg, prompt for the command to use."
                  (file-exists-p exe)
                  (file-exists-p ipython_py))
         (setq python-shell-interpreter exe
-              python-shell-interpreter-args "-i " + ipython_py))))
+              python-shell-interpreter-args "-i "))))
    (t
     (error "I don't know how to set ipython settings for this Emacs"))))
 
 (defun elpy-use-cpython (&optional cpython)
   "Set defaults to use the standard interpreter instead of IPython.
 
-With prefix arg, prompt for the command to use."
+If CPYTHON is non-nil (or with prefix arg), prompt for the command to use."
   (interactive (list (when current-prefix-arg
                        (read-file-name "Python command: "))))
   (when (not cpython)
@@ -220,7 +225,7 @@ else:
         except NameError:
             pass
         return completions"
-          python-shell-completion-module-string-code ""
+          python-shell-completion-string-code ""
           python-shell-completion-string-code
           "';'.join(__COMPLETER_all_completions('''%s'''))\n"))
    ;; Emacs 24.4
@@ -256,11 +261,14 @@ else:
   (pop-to-buffer elpy--shell-last-py-buffer))
 
 (defun elpy-shell-switch-to-shell-in-current-window ()
+  "Switch to inferior Python process buffer in the current window."
   (interactive)
   (setq elpy--shell-last-py-buffer (buffer-name))
   (switch-to-buffer (process-buffer (elpy-shell-get-or-create-process))))
 
 (defun elpy-shell-switch-to-buffer-in-current-window ()
+  "Switch from inferior Python process buffer to recent Python buffer in the
+current window."
   (interactive)
   (switch-to-buffer elpy--shell-last-py-buffer))
 
@@ -286,8 +294,7 @@ If KILL-BUFF is non-nil, also kill the associated buffer."
   "Kill all active python shells.
 
 If KILL-BUFFERS is non-nil, also kill the associated buffers.
-If ASK-FOR-EACH-ONE is non-nil, ask before killing each python process.
-"
+If ASK-FOR-EACH-ONE is non-nil, ask before killing each python process."
   (interactive)
   (let ((python-buffer-list ()))
     ;; Get active python shell buffers and kill inactive ones (if asked)
@@ -303,13 +310,13 @@ If ASK-FOR-EACH-ONE is non-nil, ask before killing each python process.
      ;; Ask for each buffers and kill
      ((and python-buffer-list ask-for-each-one)
       (loop for buffer in python-buffer-list do
-	    (when (y-or-n-p (format "Kill %s ?" buffer))
+	    (when (y-or-n-p (format "Kill %s ? " buffer))
 		(delete-process buffer)
 		(when kill-buffers
 		  (kill-buffer buffer)))))
      ;; Ask and kill every buffers
      (python-buffer-list
-      (if (y-or-n-p (format "Kill %s python shells ?" (length python-buffer-list)))
+      (if (y-or-n-p (format "Kill %s python shells ? " (length python-buffer-list)))
 	  (loop for buffer in python-buffer-list do
 		(delete-process buffer)
 		(when kill-buffers
@@ -370,7 +377,7 @@ commands can be sent to the shell."
   (elpy-shell-get-or-create-process))
 
 (defun elpy-shell--region-without-indentation (beg end)
-  "Return the current region as a string, but without indentation."
+  "Return the region between BEG and END as a string, but without indentation."
   (if (= beg end)
       ""
     (let ((region (buffer-substring beg end))
@@ -422,9 +429,11 @@ BEGIN and END refer to the region of the current buffer containing the code bein
 ;; Helper functions
 
 (defun elpy-shell--current-line-else-or-elif-p ()
+  "Whether the current line is a 'else' or a 'elif' statement."
   (eq (string-match-p "\\s-*el\\(?:se:\\|if[^\w]\\)" (thing-at-point 'line)) 0))
 
 (defun elpy-shell--current-line-indented-p ()
+  "Whether the current line is indented."
   (eq (string-match-p "\\s-+[^\\s-]+" (thing-at-point 'line)) 0))
 
 (defun elpy-shell--current-line-only-whitespace-p ()
@@ -432,6 +441,7 @@ BEGIN and END refer to the region of the current buffer containing the code bein
   (eq (string-match-p "\\s-*$" (thing-at-point 'line)) 0))
 
 (defun elpy-shell--current-line-code-line-p ()
+  "Whether the current line is a code line."
   (and (not (elpy-shell--current-line-only-whitespace-p))
        (not (python-info-current-line-comment-p))))
 
@@ -466,6 +476,7 @@ non-nil, skips backwards."
 ;; Echoing
 
 (defmacro elpy-shell--with-maybe-echo (body)
+  "Run BODY and maybe echo input and output (according to configuration)."
   `(elpy-shell--with-maybe-echo-output
     (elpy-shell--with-maybe-echo-input
      ,body)))
@@ -506,6 +517,7 @@ non-nil, skips backwards."
        (progn ,body))))
 
 (defun elpy-shell--enable-output-filter ()
+  "Enable output filter to grab output."
     (add-hook 'comint-output-filter-functions 'elpy-shell--output-filter nil t))
 
 (defun elpy-shell--output-filter (string)
@@ -578,8 +590,7 @@ Prepends a continuation promt if PREPEND-CONT-PROMPT is set."
 
 (defun elpy-shell--string-head-lines (string n)
   "Extract the first N lines from STRING."
-  (let* ((any "\\(?:.\\|\n\\)")
-         (line "\\(?:\\(?:.*\n\\)\\|\\(?:.+\\'\\)\\)")
+  (let* ((line "\\(?:\\(?:.*\n\\)\\|\\(?:.+\\'\\)\\)")
          (lines (concat line "\\{" (number-to-string n) "\\}"))
          (regexp (concat "\\`" "\\(" lines "\\)")))
     (if (string-match regexp string)
@@ -588,8 +599,7 @@ Prepends a continuation promt if PREPEND-CONT-PROMPT is set."
 
 (defun elpy-shell--string-tail-lines (string n)
   "Extract the last N lines from STRING."
-  (let* ((any "\\(?:.\\|\n\\)")
-         (line "\\(?:\\(?:.*\n\\)\\|\\(?:.+\\'\\)\\)")
+  (let* ((line "\\(?:\\(?:.*\n\\)\\|\\(?:.+\\'\\)\\)")
          (lines (concat line "\\{" (number-to-string n) "\\}"))
          (regexp (concat "\\(" lines "\\)" "\\'")))
     (if (string-match regexp string)
@@ -640,14 +650,14 @@ Prepends a continuation promt if PREPEND-CONT-PROMPT is set."
 
 (defun elpy-shell-send-file (file-name &optional process temp-file-name
                                          delete msg)
-  """Like `python-shell-send-file' but evaluates last expression separately.
+  "Like `python-shell-send-file' but evaluates last expression separately.
 
   See `python-shell-send-file' for a description of the
   arguments. This function differs in that it breaks up the
   Python code in FILE-NAME into statements. If the last statement
   is a Python expression, it is evaluated separately in 'eval'
   mode. This way, the interactive python shell can capture (and
-  print) the output of the last expression."""
+  print) the output of the last expression."
   (interactive
    (list
     (read-file-name "File to send: ")   ; file-name
@@ -895,7 +905,8 @@ See `elpy-shell--nav-beginning-of-def' for details."
     (message "There is no class definition that includes the current line.")))
 
 (defun elpy-shell-send-group-and-step ()
-  "Send the current or next group of top-level statements to the Python shell and step.
+  "Send the current or next group of top-level statements to the Python shell
+and step.
 
 A sequence of top-level statements is a group if they are not
 separated by empty lines. Empty lines within each top-level
@@ -956,7 +967,7 @@ variables `elpy-shell-cell-boundary-regexp' and
                (forward-line)
                (if (re-search-forward elpy-shell-cell-boundary-regexp nil t)
                    (forward-line -1)
-                 (end-of-buffer))
+                 (goto-char (point-max)))
                (end-of-line)
                (point))))
     (if beg
