@@ -49,10 +49,17 @@ class TestRPCGetCompletionLocation(RPCGetCompletionLocationTests,
 
 class TestRPCGetDocstring(RPCGetDocstringTests,
                           JediBackendTestCase):
-    JSON_LOADS_DOCSTRING = (
-        'loads(s, encoding=None, cls=None, '
-        'object_hook=None, parse_float=None,'
-    )
+    if sys.version_info < (3, 6):
+        JSON_LOADS_DOCSTRING = (
+            'loads(s, encoding=None, cls=None, '
+            'object_hook=None, parse_float=None,'
+        )
+    else:
+        JSON_LOADS_DOCSTRING = (
+            'loads(s, *, encoding=None, cls=None, '
+            'object_hook=None, parse_float=None,'
+        )
+
 
     def check_docstring(self, docstring):
         lines = docstring.splitlines()

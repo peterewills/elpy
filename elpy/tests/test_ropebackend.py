@@ -133,11 +133,17 @@ class TestRPCGetDocstring(RPCGetDocstringTests,
             'parse_float=None, parse_int=None, parse_constant=None, '
             '**kw):'
         )
-    else:
+    elif sys.version_info < (3, 6):
         JSON_LOADS_DOCSTRING = (
             'loads(s, encoding=None, cls=None, object_hook=None, '
             'parse_float=None, parse_int=None, parse_constant=None, '
             'object_pairs_hook=None, **kw):'
+        )
+    else:
+        JSON_LOADS_DOCSTRING = (
+            'loads(s, encoding=None, cls=None, object_hook=None, '
+            'parse_float=None, parse_int=None, parse_constant=None, '
+            'object_pairs_hook=None, *, **kw):'
         )
 
 
