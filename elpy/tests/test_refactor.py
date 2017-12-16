@@ -1,4 +1,5 @@
 import unittest
+import mock
 import tempfile
 import shutil
 import os
@@ -6,6 +7,7 @@ import mock
 import sys
 
 from elpy import refactor
+from elpy.rpc import Fault
 from textwrap import dedent
 
 
@@ -86,6 +88,21 @@ class TestGetRefactorOptions(RefactorTestCase):
         options = ref.get_refactor_options(offset)
         self.assertTrue(any(opt['name'] == "refactor_froms_to_imports"
                             for opt in options))
+
+    def test_should_raise_fault_if_rope_not_available(self):
+        # sys.modules['rope'] = "None"
+        filename, offset = self.create_file("foo.py",
+                                            "import _|_foo")
+        refactor.ROPE_AVAILABLE = False
+        with self.assertRaises(Fault):
+            refactor.Refactor(self.project_root, filename)
+        refactor.ROPE_AVAILABLE = True
+
+    def test_should_not_refactor_without_local_project_root(self):
+        filename, offset = self.create_file("foo.py",
+                                            "import _|_foo")
+        with self.assertRaises(Fault):
+            refactor.Refactor("No_file_here", filename)
 
 
 class TestGetChanges(RefactorTestCase):

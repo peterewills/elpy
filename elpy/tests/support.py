@@ -442,6 +442,13 @@ class RPCGetCompletionsTests(GenericRPCTests):
         self.assertEqual(["add"],
                          [proposal["name"] for proposal in proposals])
 
+    def test_should_return_empty_list_when_nothing_found(self):
+        source, offset = source_and_offset("foobarfoobar_|_")
+        expected = []
+        actual = self.backend.rpc_get_completions("test.py",
+                                                  source, offset)
+        self.assertEqual(expected, actual)
+
 
 class RPCGetCompletionDocstringTests(object):
     def test_should_return_docstring(self):
@@ -873,6 +880,7 @@ class RPCGetNamesTests(GenericRPCTests):
                            'filename': filename,
                            'offset': 36}])
 
+
     def test_should_not_fail_without_symbol(self):
         filename = self.project_file("test.py", "")
 
@@ -933,6 +941,16 @@ class RPCGetUsagesTests(GenericRPCTests):
                                              "",
                                              0)
 
+        self.assertEqual(usages, [])
+
+    def test_should_return_none_if_no_usages_found(self):
+        filename = self.project_file("test.py", "")
+        source, offset = source_and_offset(
+            "_|_")
+
+        usages = self.backend.rpc_get_usages(filename,
+                                             source,
+                                             offset)
         self.assertEqual(usages, [])
 
 

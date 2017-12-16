@@ -30,3 +30,9 @@ class YAPFTestCase(BackendTestCase):
     def _assert_format(self, src, expected):
         new_block = yapfutil.fix_code(src)
         self.assertEqual(new_block, expected)
+
+    def test_should_raise_fault_if_yapf_not_available(self):
+        src = 'x=       123\n'
+        yapfutil.yapf_api = False
+        with self.assertRaises(Fault):
+            yapfutil.fix_code(src)

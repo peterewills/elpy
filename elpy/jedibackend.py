@@ -198,12 +198,7 @@ class JediBackend(object):
 
         result = []
         for name in names:
-            if name.module_path == filename:
-                offset = linecol_to_pos(source, name.line, name.column)
-            elif name.module_path is not None:
-                with open(name.module_path) as f:
-                    text = f.read()
-                offset = linecol_to_pos(text, name.line, name.column)
+            offset = linecol_to_pos(source, name.line, name.column)
             result.append({"name": name.name,
                            "filename": name.module_path,
                            "offset": offset})
