@@ -2481,6 +2481,9 @@ This maps call IDs to functions.")
 (defvar elpy-rpc--jedi-available nil
   "Whether jedi is available or not.")
 
+(defvar elpy-rpc-show-debug-messsages nil
+  "Whether we should display debug messages from the rpc or not.")
+
 (defun elpy-rpc (method params &optional success error)
   "Call METHOD with PARAMS in the backend.
 
@@ -2751,7 +2754,11 @@ This is usually an error or backtrace."
   "Handle a single JSON object from the RPC backend."
   (let ((call-id (cdr (assq 'id json)))
         (error-object (cdr (assq 'error json)))
-        (result (cdr (assq 'result json))))
+        (result (cdr (assq 'result json)))
+        (debug_mess (or (cdr (assq 'debug json)) nil)))
+    (when (and debug_mess elpy-rpc-show-debug-messsages)
+      (let ((sep "==============="))
+        (message "%s\n= Elpy debug: =\n%s\n%s\n%s" sep sep debug_mess sep)))
     (let ((promise (gethash call-id elpy-rpc--backend-callbacks)))
       (when (not promise)
         (error "Received a response for unknown call-id %s" call-id))

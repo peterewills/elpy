@@ -100,8 +100,12 @@ class JSONRPCServer(object):
                 result = method(*params)
             else:
                 result = self.handle(method_name, params)
+            dm = "    Method: {}\n".format(method_name)
+            dm += "    Parameters: {}\n".format(params)
+            dm += "    Result: {}".format(result)
             if request_id is not None:
                 self.write_json(result=result,
+                                debug=dm,
                                 id=request_id)
         except Fault as fault:
             error = {"message": fault.message,
