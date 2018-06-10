@@ -3072,6 +3072,15 @@ Returns a possible multi-line docstring for the symbol at point."
                      (point-min)))
             success error))
 
+(defun elpy-rpc-get-oneline-docstring (&optional success error)
+  "Call the get_docstring API function, and return a online docstring."
+  (elpy-rpc "get_oneline_docstring"
+            (list buffer-file-name
+                  (elpy-rpc--buffer-contents)
+                  (- (point)
+                     (point-min)))
+            success error))
+
 (defun elpy-rpc-get-pydoc-completions (prefix &optional success error)
   "Return a list of modules available in pydoc starting with PREFIX."
   (elpy-rpc "get_pydoc_completions" (list prefix)
@@ -3656,10 +3665,11 @@ display the current class and method instead."
          (eldoc-message
           (cond
            ((not calltip)
-            (when elpy-eldoc-show-current-function
-              (let ((current-defun (python-info-current-defun)))
-                (when current-defun
-                  (format "In: %s()" current-defun)))))
+            (or (elpy-rpc-get-oneline-docstring)
+                (when elpy-eldoc-show-current-function
+                  (let ((current-defun (python-info-current-defun)))
+                    (when current-defun
+                      (format "In: %s()" current-defun))))))
            ((stringp calltip)
             calltip)
            (t

@@ -69,6 +69,34 @@ class JediBackend(object):
         else:
             return None
 
+    def rpc_get_oneline_docstring(self, filename, source, offset):
+        line, column = pos_to_linecol(source, offset)
+        locations = run_with_debug(jedi, 'goto_definitions',
+                                   source=source, line=line, column=column,
+                                   path=filename, encoding='utf-8')
+        if locations and locations[-1].docstring():
+            typ = locations[-1].type
+            name = locations[-1].name
+            doc = locations[-1].docstring().split('\n')
+            if typ in ['instance']:
+                return ""
+            # Gather only the first paragraph
+            doc_par = [""]
+            for d in doc:
+                if d == "":
+                    doc_par.append('')
+                else:
+                    doc_par[-1] += d + " "
+            doc_par = list(filter(lambda x: x != "", doc_par))
+
+            if "{}(".format(name) in doc_par[0]:
+                if len(doc_par) == 1:
+                    return "{} {}".format(typ, doc_par[0])
+                else:
+                    return "{} {}: {}".format(typ, name, doc_par[1])
+            else:
+                return "{} {}: {}".format(typ, name, doc_par[0])
+
     def rpc_get_definition(self, filename, source, offset):
         line, column = pos_to_linecol(source, offset)
         locations = run_with_debug(jedi, 'goto_definitions',

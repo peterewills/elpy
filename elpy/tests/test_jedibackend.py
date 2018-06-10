@@ -14,6 +14,7 @@ from elpy.tests.support import RPCGetCompletionsTests
 from elpy.tests.support import RPCGetCompletionDocstringTests
 from elpy.tests.support import RPCGetCompletionLocationTests
 from elpy.tests.support import RPCGetDocstringTests
+from elpy.tests.support import RPCGetDocstringOnelineTests
 from elpy.tests.support import RPCGetDefinitionTests
 from elpy.tests.support import RPCGetAssignmentTests
 from elpy.tests.support import RPCGetCalltipTests
@@ -64,6 +65,27 @@ class TestRPCGetDocstring(RPCGetDocstringTests,
         lines = docstring.splitlines()
         self.assertEqual(lines[0], 'Documentation for json.loads:')
         self.assertEqual(lines[2], JSON_LOADS_DOCSTRING)
+
+    @mock.patch("elpy.jedibackend.run_with_debug")
+    def test_should_not_return_empty_docstring(self, run_with_debug):
+        location = mock.MagicMock()
+        location.full_name = "testthing"
+        location.docstring.return_value = ""
+        run_with_debug.return_value = [location]
+        filename = self.project_file("test.py", "print")
+        docstring = self.backend.rpc_get_docstring(filename, "print", 0)
+        self.assertIsNone(docstring)
+
+
+class TestRPCGetDocstringOneline(RPCGetDocstringOnelineTests,
+                                 JediBackendTestCase):
+
+    def check_docstring(self, docstring):
+        JSON_LOADS_DOCSTRING_ONELINE = (
+            "function loads: Deserialize ``s`` (a ``str``, ``bytes``"
+            " or ``bytearray`` instance containing a JSON document)"
+            " to a Python object. ")
+        self.assertEqual(docstring, JSON_LOADS_DOCSTRING_ONELINE)
 
     @mock.patch("elpy.jedibackend.run_with_debug")
     def test_should_not_return_empty_docstring(self, run_with_debug):

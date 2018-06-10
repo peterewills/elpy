@@ -120,6 +120,13 @@ class ElpyRPCServer(JSONRPCServer):
         return self._call_backend("rpc_get_docstring", None, filename,
                                   get_source(source), offset)
 
+    def rpc_get_oneline_docstring(self, filename, source, offset):
+        """Get a oneline docstring for the symbol at the offset.
+
+        """
+        return self._call_backend("rpc_get_oneline_docstring", None, filename,
+                                  get_source(source), offset)
+
     def rpc_get_pydoc_completions(self, name=None):
         """Return a list of possible strings to pass to pydoc.
 
