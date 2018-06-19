@@ -3058,6 +3058,94 @@ display the current class and method instead."
       ;; Return the last message until we're done
       eldoc-last-message)))
 
+
+;;;;;;;;;;;;;;;;;;;
+;;; Module: Folding
+
+(defun elpy-module-folding (command &rest _args)
+  "Enable Folding support for Python."
+  (pcase command
+    (`global-init
+     (elpy-modules-remove-modeline-lighter 'hs-minor-mode)
+     )
+    (`buffer-init
+     (hs-minor-mode 1)
+     (setq hs-set-up-overlay 'elpy-folding-display-code-line-counts)
+     ;; (setq hs-special-modes-alist
+     ;;              '((python-mode
+     ;;                "\\s-*\\_<\\(?:def\\|class\\|\"\"\"\\)\\_>"
+     ;;                "\\(\"\"\"\\|\\)"
+     ;;                "#"
+     ;;                python-hideshow-forward-sexp-function
+     ;;                nil)))
+     )
+    (`buffer-stop
+     (hs-minor-mode -1))))
+
+(define-fringe-bitmap 'elpy-folding-fringe-marker [0 24 24 126 126 24 24 0])
+
+(defcustom elpy-folding-fringe-face 'elpy-folding-fringe-face
+  ""
+  :type 'face
+  :group 'elpy)
+
+(defface elpy-folding-fringe-face
+  '((t (:foreground "#888" :box (:line-width 2 :color "grey75" :style released-button))))
+  ""
+  :group 'elpy)
+
+(defcustom elpy-folding-face 'elpy-folding-face
+  ""
+  :type 'face
+  :group 'elpy)
+
+(defface elpy-folding-face
+  '((t (:foreground "grey50" :box t)))
+  ""
+  :group 'elpy)
+
+(defun elpy-folding-hide-docstring-region (beg end &optional repos-end)
+  "Hide a region from BEG to END, marking it as a docstring.
+Optional arg REPOS-END means reposition at end."
+  (let ((beg-eol (progn (goto-char beg) (line-end-position)))
+        (end-eol (progn (goto-char end) (line-end-position))))
+    (hs-discard-overlays beg-eol end-eol)
+    (hs-make-overlay beg-eol end-eol 'docstring beg end))
+  (goto-char (if repos-end end beg)))
+
+(defun elpy-folding-display-code-line-counts (ov)
+  (when (eq 'code (overlay-get ov 'hs))
+    (let* ((marker-string "*fringe-dummy*")
+           (marker-length (length marker-string))
+           (display-string (format "(%d)..."
+                                  (count-lines (overlay-start ov)
+                                               (overlay-end ov)))))
+      (put-text-property 0 marker-length 'display
+                         (list 'left-fringe 'elpy-folding-fringe-marker
+                               'elpy-folding-fringe-face)
+                         marker-string)
+      ;; (overlay-put ov 'help-echo "Hiddent text. C-c,= to show")
+      (overlay-put ov 'before-string marker-string)
+      (put-text-property 0 (length display-string)
+                         'face 'elpy-folding-face display-string)
+      (overlay-put ov 'display display-string))))
+
+(defun elpy-folding-fold-docstring ()
+  "Fold the docstring."
+  (interactive)
+  (when (not hs-minor-mode)
+    (error "You must activate `hs-minor-mode'"))
+  (save-excursion
+    (goto-char (point-min))
+
+    (while (python-nav-forward-defun)
+      (forward-line)
+      (when (re-search-forward "^[[:space:]]*\"\"\"" (line-end-position) t)
+        (let ((beg (point))
+              (end (re-search-forward "[[:space:]]*\"\"\"" (point-max) t)))
+          (elpy-folding-hide-docstring-region beg end))))))
+
+
 ;;;;;;;;;;;;;;;;;;;
 ;;; Module: Flymake
 
