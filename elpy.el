@@ -3292,6 +3292,17 @@ Meant to be used as a hook to `after-change-functions'."
      (elpy-folding-hide-leafs-recursive (point-min) (point-max)))
    (run-hooks 'hs-hide-hook)))
 
+;; DWIM functions
+(defun elpy-folding-hide-at-point ()
+  "Fold the thing at point."
+  (interactive)
+  (cond
+   ((use-region-p)
+    (hs-hide-comment-region (region-beginning) (region-end)))
+   ((python-info-docstring-p)
+    (elpy-folding-hide-docstring-at-point))
+   (t
+    (hs-hide-block))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;; Module: Flymake
