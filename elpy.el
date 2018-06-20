@@ -3128,6 +3128,9 @@ display the current class and method instead."
   ""
   :group 'elpy)
 
+(defvar elpy-folding-docstring-regex "r?\"\"\""
+  "Regular expresion matching docstrings opening and closing")
+
 (defun elpy-folding-display-code-line-counts (ov)
   "Display a folded region indicator with the number of folded lines.
 
@@ -3209,42 +3212,58 @@ Meant to be used as a hook to `after-change-functions'."
 
 (defun elpy-folding-hide-docstring-region (beg end &optional repos-end)
   "Hide a region from BEG to END, marking it as a docstring."
-  (let ((oneline-doc t))
-    (save-excursion
-      ;; do not fold first doc line
-      (goto-char beg)
-      (beginning-of-line)
-      (if (not (re-search-forward "[[:space:]]*\"\"\"[[:space:]]*$"
-                                  (line-end-position) t))
-          (setq beg (line-end-position))
-        (setq oneline-doc nil)
-        (forward-line 1)
+    ;; do not fold oneliners
+    (when (not (save-excursion
+                 (goto-char beg)
+                 (beginning-of-line)
+                 (re-search-forward
+                  (concat elpy-folding-docstring-regex
+                          ".*"
+                          elpy-folding-docstring-regex)
+                  (line-end-position) t)))
+      ;; get begining position (do not fold first line)
+      (save-excursion
+        (goto-char beg)
+        (when (save-excursion
+                (beginning-of-line)
+                (re-search-forward
+                 (concat elpy-folding-docstring-regex
+                         "[[:space:]]*$")
+                 (line-end-position) t))
+          (forward-line 1))
         (setq beg (line-end-position)))
-      ;; do not fold the last '"""'
-      (goto-char end)
-      (end-of-line)
-      (re-search-backward "\"\"\"" (line-beginning-position) t)
-      (if oneline-doc
-          (setq end (point))
-        (forward-line -1)
-        (setq end (line-end-position))))
-    (hs-discard-overlays beg end)
-    (hs-make-overlay beg end 'docstring 0 0)))
+      ;; get end position
+      (save-excursion
+        (goto-char end)
+        (setq end (line-end-position)))
+      (hs-discard-overlays beg end)
+      (hs-make-overlay beg end 'docstring 0 0)))
 
 (defun elpy-folding-hide-docstring-at-point ()
   "Fold the docstring at point."
-   (when (python-info-docstring-p)
-     ;; if on the first or last line move point inside
-     (beginning-of-line)
-     (when (re-search-forward "^[[:space:]]*\"\"\"" nil t)
-       (beginning-of-line)
-       (forward-line)
-       (if (not (python-info-docstring-p))
-           (forward-line -2)))
-     (let ((beg (re-search-backward "^[[:space:]]*\"\"\"" nil t))
-           (end (re-search-forward "[[:space:]]*\"\"\"" nil t 2)))
-       (elpy-folding-hide-docstring-region beg end))
-     (run-hooks 'hs-hide-hook)))
+  (when (python-info-docstring-p)
+    (save-excursion
+      (let ((beg) (end))
+        ;; Get first line
+        (if (not (save-excursion (forward-line -1)
+                                 (python-info-docstring-p)))
+            (setq beg (line-beginning-position))
+          (forward-line -1)
+          (end-of-line)
+          (re-search-backward (concat "^[[:space:]]*"
+                                      elpy-folding-docstring-regex)
+                              nil t)
+          (setq beg (line-beginning-position)))
+        ;; Be sure to be inside the docstring
+        (re-search-forward elpy-folding-docstring-regex nil t)
+        ;; Get last line
+        (if (not (save-excursion (forward-line 1)
+                                 (python-info-docstring-p)))
+            (setq end (line-end-position))
+          (re-search-forward elpy-folding-docstring-regex nil t)
+          (setq end (line-end-position)))
+        ;; hide the docstring
+        (elpy-folding-hide-docstring-region beg end)))))
 
 (defun elpy-folding-hide-all-docstring ()
   "Fold the docstring."
