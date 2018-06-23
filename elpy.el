@@ -3083,17 +3083,17 @@ display the current class and method instead."
      (elpy-modules-remove-modeline-lighter 'hs-minor-mode))
     (`buffer-init
      (hs-minor-mode 1)
-     (setq-local hs-set-up-overlay 'elpy-folding-display-code-line-counts)
+     (setq-local hs-set-up-overlay 'elpy-folding--display-code-line-counts)
      (setq-local hs-allow-nesting t)
-     (define-key elpy-mode-map [left-fringe mouse-1] 'elpy-folding-click-fringe)
-     (define-key elpy-mode-map (kbd "<mouse-1>") 'elpy-folding-click-text)
-     (elpy-folding-mark-foldable-lines)
-     (add-to-list 'after-change-functions 'elpy-folding-mark-foldable-lines))
+     (define-key elpy-mode-map [left-fringe mouse-1] 'elpy-folding--click-fringe)
+     (define-key elpy-mode-map (kbd "<mouse-1>") 'elpy-folding--click-text)
+     (elpy-folding--mark-foldable-lines)
+     (add-to-list 'after-change-functions 'elpy-folding--mark-foldable-lines))
     (`buffer-stop
      (hs-minor-mode -1)
      (define-key elpy-mode-map [left-fringe mouse-1] nil)
      (define-key elpy-mode-map (kbd "<mouse-1>") nil)
-     (remove 'elpy-folding-mark-foldable-lines after-change-functions)
+     (remove 'elpy-folding--mark-foldable-lines after-change-functions)
      (remove-overlays (point-min) (point-max) 'elpy-hs-folded t)
      (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
      (remove-overlays (point-min) (point-max) 'elpy-hs-fringe t))))
@@ -3126,7 +3126,7 @@ display the current class and method instead."
 (defface elpy-folding-fringe-face
   '((t (:foreground "grey50"
         :box (:line-width 1 :color "grey50" :style released-button))))
-  ""
+  "Face for folding bitmaps appearing on the fringe."
   :group 'elpy)
 
 (defcustom elpy-folding-face 'elpy-folding-face
@@ -3136,13 +3136,18 @@ display the current class and method instead."
 
 (defface elpy-folding-face
   '((t (:foreground "grey50" :box t)))
-  ""
+  "Face for the folded region indicator."
   :group 'elpy)
 
-(defvar elpy-folding-docstring-regex "r?\"\"\""
-  "Regular expresion matching docstrings opening and closing")
+(defcustom elpy-folding-fringe-indicators t
+  "Non-nil if Elpy should display folding fringe indicators.
 
-(defun elpy-folding-display-code-line-counts (ov)
+You will need to reload Elpy for this option to be taken into account.")
+
+(defvar elpy-folding-docstring-regex "r?\"\"\""
+  "Regular expression matching docstrings openings and closings.")
+
+(defun elpy-folding--display-code-line-counts (ov)
   "Display a folded region indicator with the number of folded lines.
 
 Meant to be used as `hs-set-up-overlay'."
@@ -3175,7 +3180,7 @@ Meant to be used as `hs-set-up-overlay'."
           (overlay-put ov 'display display-string)
           (overlay-put ov 'elpy-hs-folded t))))))
 
-(defun elpy-folding-mark-foldable-lines (&optional beg end rm-text-len)
+(defun elpy-folding--mark-foldable-lines (&optional beg end rm-text-len)
   "Add a fringe indicator for foldable lines.
 
 Meant to be used as a hook to `after-change-functions'."
@@ -3213,7 +3218,7 @@ Meant to be used as a hook to `after-change-functions'."
           (hs-show-block)
         (hs-hide-block)))))
 
-(defun elpy-folding-click-text (event)
+(defun elpy-folding--click-text (event)
   "Show block on click."
   (interactive "e")
   (let ((window (posn-window (event-end event)))
@@ -3224,7 +3229,7 @@ Meant to be used as a hook to `after-change-functions'."
         (hs-show-block)
         (deactivate-mark)))))
 
-(defun elpy-folding-hide-docstring-region (beg end &optional repos-end)
+(defun elpy-folding--hide-docstring-region (beg end)
   "Hide a region from BEG to END, marking it as a docstring."
     ;; do not fold oneliners
     (when (not (save-excursion
@@ -3253,7 +3258,7 @@ Meant to be used as a hook to `after-change-functions'."
       (hs-discard-overlays beg end)
       (hs-make-overlay beg end 'docstring 0 0)))
 
-(defun elpy-folding-hide-docstring-at-point ()
+(defun elpy-folding--hide-docstring-at-point ()
   "Fold the docstring at point."
   (when (python-info-docstring-p)
     (save-excursion
@@ -3277,22 +3282,21 @@ Meant to be used as a hook to `after-change-functions'."
           (re-search-forward elpy-folding-docstring-regex nil t)
           (setq end (line-end-position)))
         ;; hide the docstring
-        (elpy-folding-hide-docstring-region beg end)))))
+        (elpy-folding--hide-docstring-region beg end)))))
 
 (defun elpy-folding-hide-all-docstring ()
-  "Fold the docstring."
+  "Fold every docstrings in the current buffer."
   (interactive)
   (hs-life-goes-on
    (save-excursion
      (goto-char (point-min))
      (while (python-nav-forward-defun)
        (forward-line)
-       (elpy-folding-hide-docstring-at-point)))))
+       (elpy-folding--hide-docstring-at-point)))))
 
 ;; taken from https://www.emacswiki.org/emacs/HideShow
-(defun elpy-folding-hide-leafs-recursive (minp maxp)
-  "Hide blocks below point that do not contain further blocks in
-    region (MINP MAXP)."
+(defun elpy-folding--hide-leafs-recursive (minp maxp)
+  "Hide blocks that do not contain others blocks in region (MINP MAXP)."
   (when (hs-find-block-beginning)
     (setq minp (1+ (point)))
     (funcall hs-forward-sexp-func 1)
@@ -3306,7 +3310,7 @@ Meant to be used as a hook to `after-change-functions'."
              (and (< (point) maxp)
                   (re-search-forward hs-block-start-regexp maxp t)))
       (setq pos (match-beginning hs-block-start-mdata-select))
-      (if (elpy-folding-hide-leafs-recursive minp maxp)
+      (if (elpy-folding--hide-leafs-recursive minp maxp)
           (save-excursion
             (goto-char pos)
             (hs-hide-block-at-point t)))
@@ -3316,24 +3320,23 @@ Meant to be used as a hook to `after-change-functions'."
 
 ;; taken from https://www.emacswiki.org/emacs/HideShow
 (defun elpy-folding-hide-leafs ()
-  "Hide all blocks in the buffer that do not contain subordinate
-    blocks.  The hook `hs-hide-hook' is run; see `run-hooks'."
+  "Hide all blocks that do not contain other blocks."
   (interactive)
   (hs-life-goes-on
    (save-excursion
      (goto-char (point-min))
-     (elpy-folding-hide-leafs-recursive (point-min) (point-max)))
+     (elpy-folding--hide-leafs-recursive (point-min) (point-max)))
    (run-hooks 'hs-hide-hook)))
 
 ;; DWIM functions
 (defun elpy-folding-hide-at-point ()
-  "Fold the thing at point."
+  "Fold the block or docstring at point."
   (interactive)
   (cond
    ((use-region-p)
     (hs-hide-comment-region (region-beginning) (region-end)))
    ((python-info-docstring-p)
-    (elpy-folding-hide-docstring-at-point))
+    (elpy-folding--hide-docstring-at-point))
    (t
     (hs-hide-block))))
 
