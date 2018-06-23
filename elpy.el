@@ -92,7 +92,7 @@ can be inidividually enabled or disabled."
                      elpy-module-eldoc)
               (const :tag "Highlight syntax errors (Flymake)"
                      elpy-module-flymake)
-              (const :tag "Allow code folding"
+              (const :tag "Code folding"
                      elpy-module-folding)
               (const :tag "Show the virtualenv in the mode line (pyvenv)"
                      elpy-module-pyvenv)
@@ -323,6 +323,9 @@ option is `pdb'."
     (define-key map (kbd "C-c C-n") 'elpy-flymake-next-error)
     (define-key map (kbd "C-c C-o") 'elpy-occur-definitions)
     (define-key map (kbd "C-c C-p") 'elpy-flymake-previous-error)
+    (define-key map (kbd "C-c @ C-d") 'elpy-folding-hide-at-point)
+    (define-key map (kbd "C-c @ C-b") 'elpy-folding-hide-all-docstring)
+    (define-key map (kbd "C-c @ C-f") 'elpy-folding-hide-leafs)
     (define-key map (kbd "C-c C-s") 'elpy-rgrep-symbol)
     (define-key map (kbd "C-c C-t") 'elpy-test)
     (define-key map (kbd "C-c C-v") 'elpy-check)
@@ -480,6 +483,13 @@ This option need to bet set through `customize' or `customize-set-variable' to b
       :help "Go to the next inline error, if any"]
      ["Previous Error" elpy-flymake-previous-error
       :help "Go to the previous inline error, if any"])
+    ("Code folding"
+     ["Hide at point" elpy-folding-hide-at-point
+      :help "Hide the block or docstring at point"]
+     ["Hide all docstring" elpy-folding-hide-all-docstring
+      :help "Hide all the buffer docstrings"]
+     ["Hide leafs" elpy-folding-hide-leafs
+      :help "Hide all blocks not containing other blocks"])
     ("Indentation Blocks"
      ["Dedent" python-indent-shift-left
       :help "Dedent current block or region"
