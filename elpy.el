@@ -579,6 +579,7 @@ virtualenv.
     ("Completion (Company)" company "company-")
     ("Call Signatures (ElDoc)" eldoc "eldoc-")
     ("Inline Errors (Flymake)" flymake "flymake-")
+    ("Code folding (hideshow)" hideshow "hs-")
     ("Snippets (YASnippet)" yasnippet "yas-")
     ("Directory Grep (rgrep)" grep "grep-")
     ("Search as You Type (ido)" ido "ido-")
@@ -3152,12 +3153,13 @@ Meant to be used as `hs-set-up-overlay'."
         (let* ((nmb-line (count-lines (overlay-start ov) (overlay-end ov)))
                (display-string (format "(%d)..." nmb-line)))
           ;; fringe indicator
-          (put-text-property 0 marker-length 'display
-                             (list 'left-fringe 'elpy-folding-fringe-marker
-                                   'elpy-folding-fringe-face)
-                             marker-string)
-          (overlay-put ov 'before-string marker-string)
-          (overlay-put ov 'elpy-hs-fringe t)
+          (when elpy-folding-fringe-indicators
+              (put-text-property 0 marker-length 'display
+                                 (list 'left-fringe 'elpy-folding-fringe-marker
+                                       'elpy-folding-fringe-face)
+                                 marker-string)
+              (overlay-put ov 'before-string marker-string)
+              (overlay-put ov 'elpy-hs-fringe t))
           ;; folding indicator
           (put-text-property 0 (length display-string)
                              'face 'elpy-folding-face display-string)
@@ -3177,37 +3179,39 @@ Meant to be used as `hs-set-up-overlay'."
   "Add a fringe indicator for foldable lines.
 
 Meant to be used as a hook to `after-change-functions'."
-  (save-excursion
-    (save-restriction
-      (when (and beg end)
-        (narrow-to-region (progn (goto-char beg) (line-beginning-position))
-                          (progn (goto-char end) (line-end-position))))
-      (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
-      (goto-char (point-min))
-      (while (re-search-forward python-nav-beginning-of-defun-regexp nil t)
-        (let* ((beg (match-beginning 0))
-               (end (match-end 0))
-               (ov (make-overlay beg end))
-               (marker-string "*fringe-dummy*")
-               (marker-length (length marker-string)))
-          (put-text-property 0 marker-length
-                             'display
-                             (list 'left-fringe
-                                   'elpy-folding-fringe-foldable-marker
-                                   'elpy-folding-fringe-face)
-                             marker-string)
-          (overlay-put ov 'before-string marker-string)
-          (overlay-put ov 'elpy-hs-foldable t))))))
+  (when elpy-folding-fringe-indicators
+    (save-excursion
+      (save-restriction
+        (when (and beg end)
+          (narrow-to-region (progn (goto-char beg) (line-beginning-position))
+                            (progn (goto-char end) (line-end-position))))
+        (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
+        (goto-char (point-min))
+        (while (re-search-forward python-nav-beginning-of-defun-regexp nil t)
+          (let* ((beg (match-beginning 0))
+                 (end (match-end 0))
+                 (ov (make-overlay beg end))
+                 (marker-string "*fringe-dummy*")
+                 (marker-length (length marker-string)))
+            (put-text-property 0 marker-length
+                               'display
+                               (list 'left-fringe
+                                     'elpy-folding-fringe-foldable-marker
+                                     'elpy-folding-fringe-face)
+                               marker-string)
+            (overlay-put ov 'before-string marker-string)
+            (overlay-put ov 'elpy-hs-foldable t)))))))
 
-(defun elpy-folding-click-fringe (event)
+(defun elpy-folding--click-fringe (event)
   "Hide or show block on fringe click."
   (interactive "e")
-  (save-excursion
-    (mouse-set-point event)
-    (end-of-line)
-    (if (hs-already-hidden-p)
-        (hs-show-block)
-      (hs-hide-block))))
+  (when elpy-folding-fringe-indicators
+    (save-excursion
+      (mouse-set-point event)
+      (end-of-line)
+      (if (hs-already-hidden-p)
+          (hs-show-block)
+        (hs-hide-block)))))
 
 (defun elpy-folding-click-text (event)
   "Show block on click."
