@@ -3099,23 +3099,23 @@ display the current class and method instead."
      (remove-overlays (point-min) (point-max) 'elpy-hs-fringe t))))
 
 (define-fringe-bitmap 'elpy-folding-fringe-marker
-  (vector #b00011000
-          #b00011000
-          #b00011000
+  (vector #b00000000
+          #b00000000
+          #b00000000
           #b11111111
           #b11111111
-          #b00011000
-          #b00011000
+          #b01111110
+          #b00111100
           #b00011000))
 
 (define-fringe-bitmap 'elpy-folding-fringe-foldable-marker
   (vector #b00011000
-          #b00011100
-          #b00011110
-          #b00011111
-          #b00011111
-          #b00011110
-          #b00011100
+          #b00010100
+          #b00010010
+          #b00010001
+          #b00010001
+          #b00010010
+          #b00010100
           #b00011000))
 
 (defcustom elpy-folding-fringe-face 'elpy-folding-fringe-face
