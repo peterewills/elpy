@@ -3173,8 +3173,9 @@ Meant to be used as `hs-set-up-overlay'."
                              'mouse-face 'highlight display-string)
           (overlay-put ov 'display display-string)
           (overlay-put ov 'elpy-hs-folded t)))
-       ((eq 'docstring (overlay-get ov 'hs))
-        ;; for docstring, we don't display the number of line
+       ;; for docstring and comments, we don't display the number of line
+       ((or (eq 'docstring (overlay-get ov 'hs))
+            (eq 'comment (overlay-get ov 'hs)))
         (let ((display-string "..."))
           (put-text-property 0 (length display-string)
                              'mouse-face 'highlight display-string)
@@ -3208,6 +3209,7 @@ Meant to be used as a hook to `after-change-functions'."
             (overlay-put ov 'before-string marker-string)
             (overlay-put ov 'elpy-hs-foldable t)))))))
 
+;; Mouse interaction
 (defun elpy-folding--click-fringe (event)
   "Hide or show block on fringe click."
   (interactive "e")
@@ -3238,15 +3240,7 @@ Meant to be used as a hook to `after-change-functions'."
           (hs-show-block)
           (deactivate-mark))))))
 
-(defun elpy-folding--hide-region (beg end)
-  "Hide the region betwwen BEG and END"
-  (save-excursion
-    (let ((beg-eol (progn (goto-char beg) (line-end-position)))
-          (end-eol (progn (goto-char end) (line-end-position))))
-      (hs-discard-overlays beg-eol end-eol)
-      (hs-make-overlay beg-eol end-eol 'code beg end)
-      (deactivate-mark))))
-
+;; Hiding docstrings
 (defun elpy-folding--hide-docstring-region (beg end)
   "Hide a region from BEG to END, marking it as a docstring.
 
@@ -3316,7 +3310,19 @@ docstring body."
        (forward-line)
        (elpy-folding--hide-docstring-at-point)))))
 
-;; taken from https://www.emacswiki.org/emacs/HideShow
+;; Hiding comments
+(defun elpy-folding-hide-all-comments ()
+  "Hide all buffer comments block at point."
+  (interactive)
+  (hs-life-goes-on
+   (save-excursion
+     (goto-char (point-min))
+     (while (comment-search-forward (point-max) t)
+       (hs-hide-block)
+       (python-util-forward-comment (buffer-size))))))
+
+;; Hiding leafs
+;;     taken from https://www.emacswiki.org/emacs/HideShow
 (defun elpy-folding--hide-leafs (beg end)
   "Hide blocks that do not contain others blocks in region (BEG END)."
   (save-restriction
@@ -3339,7 +3345,6 @@ docstring body."
       (goto-char end)
       leaf)))
 
-;; taken from https://www.emacswiki.org/emacs/HideShow
 (defun elpy-folding-hide-leafs ()
   "Hide all blocks that do not contain other blocks."
   (interactive)
@@ -3354,6 +3359,15 @@ docstring body."
    (run-hooks 'hs-hide-hook))))
 
 ;; DWIM functions
+(defun elpy-folding--hide-region (beg end)
+  "Hide the region betwwen BEG and END"
+  (save-excursion
+    (let ((beg-eol (progn (goto-char beg) (line-end-position)))
+          (end-eol (progn (goto-char end) (line-end-position))))
+      (hs-discard-overlays beg-eol end-eol)
+      (hs-make-overlay beg-eol end-eol 'code beg end)
+      (deactivate-mark))))
+
 (defun elpy-folding-hide-at-point ()
   "Fold the block or docstring at point."
   (interactive)
