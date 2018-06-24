@@ -3214,14 +3214,12 @@ Meant to be used as a hook to `after-change-functions'."
     (mouse-set-point event)
     (let* ((folded (save-excursion
                      (end-of-line)
-                     (cl-loop
-                      for ov in (overlays-at (point))
-                      if (overlay-get ov 'elpy-hs-folded)
-                      collect t)))
-           (foldable (cl-loop
-                      for ov in (overlays-at (point))
-                      if (overlay-get ov 'elpy-hs-foldable)
-                      collect t)))
+                     (seq-filter (lambda (ov)
+                                   (overlay-get ov 'elpy-hs-folded))
+                                 (overlays-at (point)))))
+           (foldable (seq-filter (lambda (ov)
+                                   (overlay-get ov 'elpy-hs-foldable))
+                                 (overlays-at (point)))))
       (if folded
           (hs-show-block)
         (if foldable
@@ -3249,7 +3247,11 @@ Meant to be used as a hook to `after-change-functions'."
       (deactivate-mark))))
 
 (defun elpy-folding--hide-docstring-region (beg end)
-  "Hide a region from BEG to END, marking it as a docstring."
+  "Hide a region from BEG to END, marking it as a docstring.
+
+BEG and END have to be respectively on the first and last line
+of the docstring, their values are adapted to hide only the
+docstring body."
     ;; do not fold oneliners
     (when (not (save-excursion
                  (goto-char beg)
@@ -3259,7 +3261,7 @@ Meant to be used as a hook to `after-change-functions'."
                           ".*"
                           elpy-folding-docstring-regex)
                   (line-end-position) t)))
-      ;; get begining position (do not fold first line)
+      ;; get begining position (do not fold first doc line)
       (save-excursion
         (goto-char beg)
         (when (save-excursion
@@ -3278,11 +3280,11 @@ Meant to be used as a hook to `after-change-functions'."
       (hs-make-overlay beg end 'docstring 0 0)))
 
 (defun elpy-folding--hide-docstring-at-point ()
-  "Fold the docstring at point."
+  "Hide the docstring at point."
   (when (python-info-docstring-p)
     (save-excursion
       (let ((beg) (end))
-        ;; Get first line
+        ;; Get first doc line
         (if (not (save-excursion (forward-line -1)
                                  (python-info-docstring-p)))
             (setq beg (line-beginning-position))
@@ -3292,7 +3294,7 @@ Meant to be used as a hook to `after-change-functions'."
                                       elpy-folding-docstring-regex)
                               nil t)
           (setq beg (line-beginning-position)))
-        ;; Be sure to be inside the docstring
+        ;; Go to docstring opening (to be sure to be inside the docstring)
         (re-search-forward elpy-folding-docstring-regex nil t)
         ;; Get last line
         (if (not (save-excursion (forward-line 1)
@@ -3351,13 +3353,14 @@ Meant to be used as a hook to `after-change-functions'."
 (defun elpy-folding-hide-at-point ()
   "Fold the block or docstring at point."
   (interactive)
-  (cond
-   ((use-region-p)
-    (elpy-folding--hide-region (region-beginning) (region-end)))
-   ((python-info-docstring-p)
-    (elpy-folding--hide-docstring-at-point))
-   (t
-    (hs-hide-block))))
+  (hs-life-goes-on
+   (cond
+    ((use-region-p)
+     (elpy-folding--hide-region (region-beginning) (region-end)))
+    ((python-info-docstring-p)
+     (elpy-folding--hide-docstring-at-point))
+    (t
+     (hs-hide-block)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;; Module: Flymake
