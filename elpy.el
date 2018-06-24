@@ -3316,38 +3316,41 @@ docstring body."
        (elpy-folding--hide-docstring-at-point)))))
 
 ;; taken from https://www.emacswiki.org/emacs/HideShow
-(defun elpy-folding--hide-leafs-recursive (minp maxp)
-  "Hide blocks that do not contain others blocks in region (MINP MAXP)."
-  (when (hs-find-block-beginning)
-    (setq minp (1+ (point)))
-    (funcall hs-forward-sexp-func 1)
-    (setq maxp (1- (point))))
-  (unless hs-allow-nesting
-    (hs-discard-overlays minp maxp))
-  (goto-char minp)
-  (let ((leaf t))
-    (while (progn
-             (forward-comment (buffer-size))
-             (and (< (point) maxp)
-                  (re-search-forward hs-block-start-regexp maxp t)))
-      (setq pos (match-beginning hs-block-start-mdata-select))
-      (if (elpy-folding--hide-leafs-recursive minp maxp)
-          (save-excursion
-            (goto-char pos)
-            (hs-hide-block-at-point t)))
-      (setq leaf nil))
-    (goto-char maxp)
-    leaf))
+(defun elpy-folding--hide-leafs (beg end)
+  "Hide blocks that do not contain others blocks in region (BEG END)."
+  (save-restriction
+    (narrow-to-region (progn (goto-char beg) (line-beginning-position))
+                      (progn (goto-char end) (line-end-position)))
+    (unless hs-allow-nesting
+      (hs-discard-overlays beg end))
+    (goto-char (point-min))
+    (let ((leaf t))
+      (while (progn
+               (forward-comment (buffer-size))
+               (and (< (point) end)
+                    (re-search-forward hs-block-start-regexp end t)))
+        (setq pos (match-beginning hs-block-start-mdata-select))
+        (if (elpy-folding--hide-leafs-recursive beg end)
+            (save-excursion
+              (goto-char pos)
+              (hs-hide-block-at-point t)))
+        (setq leaf nil))
+      (goto-char end)
+      leaf)))
 
 ;; taken from https://www.emacswiki.org/emacs/HideShow
 (defun elpy-folding-hide-leafs ()
   "Hide all blocks that do not contain other blocks."
   (interactive)
   (hs-life-goes-on
-   (save-excursion
-     (goto-char (point-min))
-     (elpy-folding--hide-leafs-recursive (point-min) (point-max)))
-   (run-hooks 'hs-hide-hook)))
+   (let ((beg (save-excursion
+                (goto-char (if (use-region-p) (region-beginning) (point-min)))
+                (line-beginning-position)))
+         (end (save-excursion
+                (goto-char (if (use-region-p) (region-end) (point-max)))
+                (1+ (line-end-position)))))
+     (elpy-folding--hide-leafs beg end)
+   (run-hooks 'hs-hide-hook))))
 
 ;; DWIM functions
 (defun elpy-folding-hide-at-point ()
