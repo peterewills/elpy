@@ -3193,8 +3193,8 @@ Meant to be used as a hook to `after-change-functions'."
         (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
         (goto-char (point-min))
         (while (re-search-forward python-nav-beginning-of-defun-regexp nil t)
-          (let* ((beg (match-beginning 0))
-                 (end (match-end 0))
+          (let* ((beg (line-beginning-position))
+                 (end (line-end-position))
                  (ov (make-overlay beg end))
                  (marker-string "*fringe-dummy*")
                  (marker-length (length marker-string)))
@@ -3211,23 +3211,33 @@ Meant to be used as a hook to `after-change-functions'."
   "Hide or show block on fringe click."
   (interactive "e")
   (when elpy-folding-fringe-indicators
-    (save-excursion
-      (mouse-set-point event)
-      (end-of-line)
-      (if (hs-already-hidden-p)
+    (mouse-set-point event)
+    (let* ((folded (save-excursion
+                     (end-of-line)
+                     (cl-loop
+                      for ov in (overlays-at (point))
+                      if (overlay-get ov 'elpy-hs-folded)
+                      collect t)))
+           (foldable (cl-loop
+                      for ov in (overlays-at (point))
+                      if (overlay-get ov 'elpy-hs-foldable)
+                      collect t)))
+      (if folded
           (hs-show-block)
-        (hs-hide-block)))))
+        (if foldable
+            (hs-hide-block))))))
 
 (defun elpy-folding--click-text (event)
   "Show block on click."
   (interactive "e")
-  (let ((window (posn-window (event-end event)))
-        (pos (posn-point (event-end event))))
-    (with-current-buffer (window-buffer window)
-      (goto-char pos)
-      (when (hs-overlay-at (point))
-        (hs-show-block)
-        (deactivate-mark)))))
+  (save-excursion
+    (let ((window (posn-window (event-end event)))
+          (pos (posn-point (event-end event))))
+      (with-current-buffer (window-buffer window)
+        (goto-char pos)
+        (when (hs-overlay-at (point))
+          (hs-show-block)
+          (deactivate-mark))))))
 
 (defun elpy-folding--hide-docstring-region (beg end)
   "Hide a region from BEG to END, marking it as a docstring."
