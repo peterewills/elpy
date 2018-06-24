@@ -3239,6 +3239,15 @@ Meant to be used as a hook to `after-change-functions'."
           (hs-show-block)
           (deactivate-mark))))))
 
+(defun elpy-folding--hide-region (beg end)
+  "Hide the region betwwen BEG and END"
+  (save-excursion
+    (let ((beg-eol (progn (goto-char beg) (line-end-position)))
+          (end-eol (progn (goto-char end) (line-end-position))))
+      (hs-discard-overlays beg-eol end-eol)
+      (hs-make-overlay beg-eol end-eol 'code beg end)
+      (deactivate-mark))))
+
 (defun elpy-folding--hide-docstring-region (beg end)
   "Hide a region from BEG to END, marking it as a docstring."
     ;; do not fold oneliners
@@ -3344,7 +3353,7 @@ Meant to be used as a hook to `after-change-functions'."
   (interactive)
   (cond
    ((use-region-p)
-    (hs-hide-comment-region (region-beginning) (region-end)))
+    (elpy-folding--hide-region (region-beginning) (region-end)))
    ((python-info-docstring-p)
     (elpy-folding--hide-docstring-at-point))
    (t
