@@ -3098,25 +3098,26 @@ display the current class and method instead."
      (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
      (remove-overlays (point-min) (point-max) 'elpy-hs-fringe t))))
 
+;; Fringe and folding indicators
 (define-fringe-bitmap 'elpy-folding-fringe-marker
   (vector #b00000000
           #b00000000
           #b00000000
-          #b11111111
-          #b11111111
+          #b11000011
+          #b11100111
           #b01111110
           #b00111100
           #b00011000))
 
 (define-fringe-bitmap 'elpy-folding-fringe-foldable-marker
-  (vector #b00011000
-          #b00010100
-          #b00010010
-          #b00010001
-          #b00010001
-          #b00010010
-          #b00010100
-          #b00011000))
+  (vector #b00100000
+          #b00010000
+          #b00001000
+          #b00000100
+          #b00000100
+          #b00001000
+          #b00010000
+          #b00100000))
 
 (defcustom elpy-folding-fringe-face 'elpy-folding-fringe-face
   "Face for folding bitmaps appearing on the fringe."
