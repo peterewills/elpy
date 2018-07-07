@@ -3087,7 +3087,10 @@ display the current class and method instead."
      (hs-minor-mode 1)
      (setq-local hs-set-up-overlay 'elpy-folding--display-code-line-counts)
      (setq-local hs-allow-nesting t)
-     (define-key elpy-mode-map [left-fringe mouse-1] 'elpy-folding--click-fringe)
+     ;; Overwrite python.el value, because it also detected comments blocks
+     (setq-local hs-block-start-regexp "^\\s-*\\_<\\(?:def\\|class\\)\\_>")
+     (define-key elpy-mode-map [left-fringe mouse-1]
+       'elpy-folding--click-fringe)
      (define-key elpy-mode-map (kbd "<mouse-1>") 'elpy-folding--click-text)
      (elpy-folding--mark-foldable-lines)
      (add-to-list 'after-change-functions 'elpy-folding--mark-foldable-lines))
@@ -3328,19 +3331,24 @@ docstring body."
 ;;     taken from https://www.emacswiki.org/emacs/HideShow
 (defun elpy-folding--hide-leafs (beg end)
   "Hide blocks that do not contain others blocks in region (BEG END)."
-  (save-restriction
-    (narrow-to-region (progn (goto-char beg) (line-beginning-position))
-                      (progn (goto-char end) (line-end-position)))
+  (save-excursion
+    (goto-char beg)
+    ;; Find the current block beginning and end
+    (when (hs-find-block-beginning)
+      (setq beg (1+ (point)))
+      (funcall hs-forward-sexp-func 1)
+      (setq end (1- (point))))
+    ;; Show all branches if nesting not allowed
     (unless hs-allow-nesting
       (hs-discard-overlays beg end))
-    (goto-char (point-min))
+    ;; recursively treat current block leafs
     (let ((leaf t))
       (while (progn
                (forward-comment (buffer-size))
                (and (< (point) end)
                     (re-search-forward hs-block-start-regexp end t)))
         (setq pos (match-beginning hs-block-start-mdata-select))
-        (if (elpy-folding--hide-leafs-recursive beg end)
+        (if (elpy-folding--hide-leafs pos end)
             (save-excursion
               (goto-char pos)
               (hs-hide-block-at-point t)))
