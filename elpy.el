@@ -3097,12 +3097,14 @@ display the current class and method instead."
 
     (`buffer-stop
      (hs-minor-mode -1)
+     (kill-local-variable hs-set-up-overlay)
+     (kill-local-variable hs-allow-nesting)
+     (kill-local-variable hs-block-start-regexp)
      (define-key elpy-mode-map [left-fringe mouse-1] nil)
      (define-key elpy-mode-map (kbd "<mouse-1>") nil)
      (remove 'elpy-folding--mark-foldable-lines after-change-functions)
-     (remove-overlays (point-min) (point-max) 'elpy-hs-folded t)
-     (remove-overlays (point-min) (point-max) 'elpy-hs-foldable t)
-     (remove-overlays (point-min) (point-max) 'elpy-hs-fringe t))))
+     (cl-loop for prop in '(elpy-hs-folded elpy-hs-foldable elpy-hs-fringe)
+              do (remove-overlays (point-min) (point-max) prop t)))))
 
 ;; Fringe and folding indicators
 (define-fringe-bitmap 'elpy-folding-fringe-marker
