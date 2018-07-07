@@ -489,7 +489,7 @@ This option need to bet set through `customize' or `customize-set-variable' to b
      ["Hide all docstring" elpy-folding-hide-all-docstring
       :help "Hide all the buffer docstrings"]
      ["Hide leafs" elpy-folding-hide-leafs
-      :help "Hide all blocks not containing other blocks"])
+      :help "Hide all leaf blocks (blocks not containing other blocks)"])
     ("Indentation Blocks"
      ["Dedent" python-indent-shift-left
       :help "Dedent current block or region"
@@ -3077,10 +3077,12 @@ display the current class and method instead."
 ;;; Module: Folding
 
 (defun elpy-module-folding (command &rest _args)
-  "Enable Folding support for Python."
+  "Module allowing code folding in Python."
   (pcase command
+
     (`global-init
      (elpy-modules-remove-modeline-lighter 'hs-minor-mode))
+
     (`buffer-init
      (hs-minor-mode 1)
      (setq-local hs-set-up-overlay 'elpy-folding--display-code-line-counts)
@@ -3089,6 +3091,7 @@ display the current class and method instead."
      (define-key elpy-mode-map (kbd "<mouse-1>") 'elpy-folding--click-text)
      (elpy-folding--mark-foldable-lines)
      (add-to-list 'after-change-functions 'elpy-folding--mark-foldable-lines))
+
     (`buffer-stop
      (hs-minor-mode -1)
      (define-key elpy-mode-map [left-fringe mouse-1] nil)
