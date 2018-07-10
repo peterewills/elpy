@@ -532,6 +532,60 @@ fly, so see there for more configuration options.
    script to a directory inside your :envvar:`PATH`, meaning you do
    not need to install the program in every virtual env separately.
 
+Folding
+=======
+
+Elpy offers code folding by enhancing the builtin folding minor mode ``hideshow``.
+
+The classical keybindings for hideshow are still available, e.g.:
+
+.. command:: hs-hide-block
+   :kbd: C-c @ C-d
+
+.. command:: hs-show-block
+   :kbd: C-c @ C-s
+
+.. command:: hs-toggle-hiding
+   :kbd: C-c @ C-c
+
+.. command:: hs-show-all
+   :kbd: C-c @ C-d
+
+(see `Hideshow`_ documentation for more information)
+
+.. _Hideshow: https://www.emacswiki.org/emacs/HideShow
+
+Elpy adds on top of ``Hideshow`` mode several functionalities.
+Notably clickable fringe indicators and clickable overlays to
+reveal hidden blocks.
+The display of fringes can be disable through the following option:
+
+.. option:: elpy-folding-fringe-indicators
+
+   If elpy should display folding fringe indicators.
+
+Elpy also adds the following python-specific functions:
+
+.. command:: elpy-folding-hide-all-docstring
+   :kbd: C-c @ C-b
+
+   Hide all python docstrings, leaving only the first documentation lines.
+
+.. command:: elpy-folding-hide-leafs
+   :kbd: C-c @ C-b
+
+   Hide all code leafs, i.e. all blocks that do not contains any other blocks.
+
+.. command:: elpy-folding-hide-all-comments
+   :kbd: C-c @ C-b
+
+   Hide all comments, leaving only the first comment line.
+
+.. command:: elpy-folding-hide-at-point
+   :kbd: C-c @ C-d
+
+   Hide the thing at point, that can be a docstring, a comment or a code block.
+   Hide code blocks can be revealed with ``hs-show-block``, bound to :kbd:`C-c @ C-s`.
 
 Documentation
 =============
