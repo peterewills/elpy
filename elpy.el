@@ -3564,15 +3564,9 @@ python shell interpreter."
   ;; check if prompt available
   (if (or (not elpy-company-add-completion-from-shell)
           (not (python-shell-get-process))
-          (with-current-buffer (process-buffer (python-shell-get-process))
-            (save-excursion
-              (goto-char (point-max))
-              (let ((inhibit-field-text-motion t))
-                (beginning-of-line)
-                (not (search-forward-regexp
-                      python-shell--prompt-calculated-input-regexp
-                      nil t))))))
-      candidates
+          (not (with-timeout (0.01) (python-shell-send-string-no-output
+                                    "__elpy_shell_availability_test = 1"))))
+        candidates
     (let* ((new-candidates (python-completion-complete-at-point))
            (start (nth 0 new-candidates))
            (end (nth 1 new-candidates))
