@@ -207,26 +207,26 @@ class ElpyRPCServer(JSONRPCServer):
             raise Fault("get_names not implemented by current backend",
                         code=400)
 
-    def rpc_fix_code(self, source, directory):
+    def rpc_fix_code(self, source, directory, linelength):
         """Formats Python code to conform to the PEP 8 style guide.
 
         """
         source = get_source(source)
-        return fix_code(source, directory)
+        return fix_code(source, directory, linelength)
 
-    def rpc_fix_code_with_yapf(self, source, directory):
+    def rpc_fix_code_with_yapf(self, source, directory, linelength):
         """Formats Python code to conform to the PEP 8 style guide.
 
         """
         source = get_source(source)
-        return fix_code_with_yapf(source, directory)
+        return fix_code_with_yapf(source, directory, linelength)
 
-    def rpc_fix_code_with_black(self, source, directory):
+    def rpc_fix_code_with_black(self, source, directory, linelength):
         """Formats Python code to conform to the PEP 8 style guide.
 
         """
         source = get_source(source)
-        return fix_code_with_black(source, directory)
+        return fix_code_with_black(source, directory, linelength)
 
 
 def get_source(fileobj):

@@ -2177,13 +2177,19 @@ prefix argument is given, prompt for a symbol from the user."
    (t
     (message "Install yapf/autopep8 to format code."))))
 
+(defcustom elpy-fix-code-line-length 79
+  "Maximum line number when fixing code."
+  :type 'number
+  :group 'elpy)
+
 (defun elpy-yapf-fix-code ()
   "Automatically formats Python code with yapf.
 
 Yapf can be configured with a style file placed in the project
 root directory."
   (interactive)
-  (elpy--fix-code-with-formatter "fix_code_with_yapf"))
+  (elpy--fix-code-with-formatter "fix_code_with_yapf"
+                                 elpy-fix-code-line-length))
 
 (defun elpy-autopep8-fix-code ()
   "Automatically formats Python code to conform to the PEP 8 style guide.
@@ -2191,14 +2197,15 @@ root directory."
 Autopep8 can be configured with a style file placed in the project
 root directory."
   (interactive)
-  (elpy--fix-code-with-formatter "fix_code"))
+  (elpy--fix-code-with-formatter "fix_code" elpy-fix-code-line-length))
 
 (defun elpy-black-fix-code ()
   "Automatically formats Python code with black."
   (interactive)
-  (elpy--fix-code-with-formatter "fix_code_with_black"))
+  (elpy--fix-code-with-formatter "fix_code_with_black"
+                                 elpy-fix-code-line-length))
 
-(defun elpy--fix-code-with-formatter (method)
+(defun elpy--fix-code-with-formatter (method linelength)
   "Common routine for formatting python code."
   (let ((line (line-number-at-pos))
         (col (current-column))
@@ -2208,7 +2215,8 @@ root directory."
     (if (use-region-p)
         (let ((new-block (elpy-rpc method
                                    (list (elpy-rpc--region-contents)
-                                         directory)))
+                                         directory
+                                         linelength)))
               (beg (region-beginning))
               (end (region-end)))
           (elpy-buffer--replace-region
@@ -2218,7 +2226,8 @@ root directory."
           (deactivate-mark))
       (let ((new-block (elpy-rpc method
                                  (list (elpy-rpc--buffer-contents)
-                                       directory)))
+                                       directory
+                                       linelength)))
             (beg (point-min))
             (end (point-max)))
         (elpy-buffer--replace-region beg end new-block)

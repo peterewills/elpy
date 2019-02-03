@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
     black = None
 
 
-def fix_code(code, directory):
+def fix_code(code, directory, linelength):
     """Formats Python code to conform to the PEP 8 style guide.
 
     """
@@ -26,9 +26,11 @@ def fix_code(code, directory):
         raise Fault('black not installed', code=400)
 
     try:
+        if linelength is None:
+            linelength = black.DEFAULT_LINE_LENGTH
         reformatted_source = black.format_file_contents(
             src_contents=code,
-            line_length=black.DEFAULT_LINE_LENGTH,
+            line_length=linelength,
             fast=False
         )
         return reformatted_source
