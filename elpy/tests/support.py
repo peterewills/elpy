@@ -118,8 +118,6 @@ class GenericRPCTests(object):
 
         self.rpc(filename, source, offset)
 
-    # @unittest.skipIf((3, 3) <= sys.version_info < (3, 4),
-    #                  "Bug in jedi for Python 3.3")
     def test_should_not_fail_for_relative_import(self):
         source, offset = source_and_offset(
             "from .. import foo_|_"
@@ -394,8 +392,6 @@ class RPCGetCompletionsTests(GenericRPCTests):
         self.assertEqual([cand['suffix'] for cand in completions],
                          [])
 
-    # @unittest.skipIf((3, 3) <= sys.version_info < (3, 4),
-    #                  "Bug in jedi for Python 3.3")
     def test_should_not_fail_for_short_module(self):
         source, offset = source_and_offset("from .. import foo_|_")
         filename = self.project_file("test.py", source)
