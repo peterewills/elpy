@@ -612,6 +612,7 @@ This option need to bet set through `customize' or `customize-set-variable' to b
     (add-hook 'python-mode-hook 'elpy-mode)
     (add-hook 'pyvenv-post-activate-hooks 'elpy-rpc--disconnect)
     (add-hook 'inferior-python-mode-hook 'elpy-shell--enable-output-filter)
+    (add-hook 'inferior-python-mode-hook 'elpy-ve--enable-output-filter)
     ;; Enable Elpy-mode in the opened python buffer
     (dolist (buffer (buffer-list))
       (and (not (string-match "^ ?\\*" (buffer-name buffer)))
@@ -625,6 +626,7 @@ This option need to bet set through `customize' or `customize-set-variable' to b
   (interactive)
   (remove-hook 'python-mode-hook 'elpy-mode)
   (remove-hook 'inferior-python-mode-hook 'elpy-shell--enable-output-filter)
+  (remove-hook 'inferior-python-mode-hook 'elpy-ve--enable-output-filter)
   (elpy-modules-global-stop)
   (setq elpy-enabled-p nil))
 

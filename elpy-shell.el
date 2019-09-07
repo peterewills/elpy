@@ -1496,6 +1496,23 @@ Ensure that it fills WIDTH."
 \\{elpy-ve-detail-mode-map}"
   (read-only-mode))
 
+(defun elpy-ve--output-filter (string)
+  "Filter used to update the variable explorer.
+
+No actual filtering is performed."
+  (when (python-shell-comint-end-of-output-p string)
+    (when (and (get-buffer "*Elpy Variable Explorer*")
+               (not elpy-ve-gathering-data-from-shell))
+      ;; Update the ve
+      (save-window-excursion
+        (condition-case nil
+            (elpy-ve-display-variable-explorer)
+          (error nil))))
+    (setq elpy-ve-gathering-data-from-shell nil)))
+
+(defun elpy-ve--enable-output-filter ()
+    (add-hook 'comint-output-filter-functions 'elpy-ve--output-filter nil t))
+
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; Deprecated functions
 
