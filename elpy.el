@@ -3324,6 +3324,68 @@ display the current class and method instead."
          (doc (elpy-rpc-get-completion-docstring symbol)))
     (elpy-autodoc--show-doc doc)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Windows organisation
+
+(defvar elpy-layout-enabled nil)
+(defvar elpy-layout-top-right-window nil)
+(defvar elpy-layout-bottom-right-window nil)
+(defvar elpy-layout-left-window nil)
+
+(defun elpy-layout-create-layout ())
+
+(defun elpy-toggle-layout ()
+  "Arange windows to provide a nice layout."
+  (interactive)
+  (unless elpy-mode
+    (error "Not in an Elpy buffer"))
+  (if elpy-layout-enabled
+      (progn
+        (setq elpy-layout-enabled nil)
+        (setq display-buffer-alist nil)
+        (message "Elpy layout deactivated"))
+    (setq elpy-layout-enabled t)
+    (delete-other-windows)
+    (setq elpy-layout-left-window (selected-window))
+    (setq elpy-layout-top-right-window (split-window-right))
+    (select-window elpy-layout-top-right-window)
+    (setq elpy-layout-bottom-right-window
+          (split-window-below))
+    ;;
+    (setq display-buffer-alist
+          `(("\\*Python.*\\*"
+             (lambda (buffer alist)
+               (save-excursion
+                 (cond
+                  ((window-live-p elpy-layout-bottom-right-window)
+                       (select-window elpy-layout-bottom-right-window)
+                       (switch-to-buffer buffer))
+                  ((window-live-p elpy-layout-top-right-window)
+                   (select-window elpy-layout-top-right-window)
+                   (setq elpy-layout-bottom-right-window
+                         (split-window-vertically))
+                   (switch-to-buffer buffer))
+                  (t
+                   (select-window elpy-layout-left-window)
+                   (elpy-toggle-layout)
+                   (elpy-toggle-layout)))
+                   )))
+            ("\\*\\(?:Elpy Variable Explorer.*\\|Python Doc\\)\\*"
+            ;; ("\\*\\(?:help\\|grep\\|Completions\\)\\*"
+             (lambda (buffer alist)
+               (save-excursion
+                 (if (window-live-p elpy-layout-bottom-right-window)
+                     (progn
+                       (select-window elpy-layout-top-right-window)
+                       (switch-to-buffer buffer))
+                   (display-buffer-pop-up-window buffer alist)))))))
+    (select-window elpy-layout-left-window)
+    (save-excursion
+      (elpy-shell-display-buffer)
+      (elpy-ve-display-variable-explorer))
+    (message "Elpy layout activated")
+    ))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Backwards compatibility
 
