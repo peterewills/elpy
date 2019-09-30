@@ -67,6 +67,7 @@
   (elpy-testcase ()
     ;; The test failed on Travis in 24.3 because the function was not
     ;; defined. Weird. Well, call it in explicitly.
+    (makunbound 'projectile-find-file)
     (require 'find-file-in-project)
     (mletf* ((ffip-called nil)
              (find-file-in-project () (setq ffip-called t)))
@@ -74,3 +75,15 @@
       (elpy-find-file)
 
       (should ffip-called))))
+
+(ert-deftest elpy-find-file-should-call-projectile ()
+  (elpy-testcase ()
+    ;; The test failed on Travis in 24.3 because the function was not
+    ;; defined. Weird. Well, call it in explicitly.
+    (makunbound 'find-file-in-project)
+    (when (require 'projectile nil t)
+      (mletf* ((projectile-called nil)
+               (projectile-find-file () (setq projectile-called t)))
+
+       (elpy-find-file)
+       (should projectile-called)))))

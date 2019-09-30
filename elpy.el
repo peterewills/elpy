@@ -6,7 +6,7 @@
 ;; URL: https://github.com/jorgenschaefer/elpy
 ;; Version: 1.31.0
 ;; Keywords: Python, IDE, Languages, Tools
-;; Package-Requires: ((company "0.9.2") (emacs "24.4") (find-file-in-project "3.3")  (highlight-indentation "0.5.0") (pyvenv "1.3") (yasnippet "0.8.0") (s "1.12.0"))
+;; Package-Requires: ((company "0.9.10") (emacs "24.4") (highlight-indentation "0.7.0") (pyvenv "1.20") (yasnippet "0.13.0") (s "1.12.0"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -52,7 +52,6 @@
 (require 'elpy-shell)
 (require 'elpy-rpc)
 (require 'pyvenv)
-(require 'find-file-in-project)
 
 (defconst elpy-version "1.31.0"
   "The version of the Elpy Lisp code.")
@@ -1447,12 +1446,12 @@ This combines
 (defun elpy-find-file (&optional dwim)
   "Efficiently find a file in the current project.
 
+It necessitates `projectile' or `find-file-in-project' to be installed.
+
 With prefix argument (or DWIM non-nil), tries to guess what kind of
-file the user wants to open.
-
-On an import line, it opens the file of that module.
-
-Otherwise, it opens a test file associated with the current file,
+file the user wants to open:
+- On an import line, it opens the file of that module.
+- Otherwise, it opens a test file associated with the current file,
 if one exists. A test file is named test_<name>.py if the current
 file is <name>.py, and is either in the same directory or a
 \"test\" or \"tests\" subdirectory."
@@ -1477,11 +1476,27 @@ file is <name>.py, and is either in the same directory or a
       (if test-file
           (find-file test-file)
         (elpy-find-file nil))))
-   (t
+   ((fboundp 'projectile-find-file)
+    (let ((projectile-globally-ignored-file-suffixes
+           (delete-dups
+            (nconc
+             (cl-copy-list projectile-globally-ignored-file-suffixes)
+             (cl-copy-list completion-ignored-extensions))))
+          (projectile-globally-ignored-directories
+           (delete-dups
+            (nconc
+             (cl-copy-list projectile-globally-ignored-directories)
+             (cl-copy-list elpy-ffip-prune-patterns)
+             (elpy-project-ignored-directories))))
+          (projectile-project-root (or (elpy-project-root)
+                                       default-directory)))
+      (projectile-find-file)))
+   ((fboundp 'find-file-in-project)
     (let ((ffip-prune-patterns (elpy-ffip-prune-patterns))
           (ffip-project-root (or (elpy-project-root)
                                  default-directory))
           ;; Set up ido to use vertical file lists.
+          (ffip-prefer-ido-mode t)
           (ido-decorations '("\n" "" "\n" "\n..."
                              "[" "]" " [No match]" " [Matched]"
                              " [Not readable]" " [Too big]"
@@ -1492,7 +1507,9 @@ file is <name>.py, and is either in the same directory or a
                                   (define-key ido-completion-map (kbd "<up>")
                                     'ido-prev-match))
                                 ido-setup-hook)))
-      (find-file-in-project)))))
+      (find-file-in-project)))
+   (t
+    (error "`elpy-find-file' necessitates `projectile' or `find-file-in-project' to be installed"))))
 
 (defun elpy-find--test-file ()
   "Return the test file for the current file, if any.
