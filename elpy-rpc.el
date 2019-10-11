@@ -260,8 +260,8 @@ During the execution of BODY the following variables are available:
                 (file-name-directory
                  current-environment-binaries)))))
             ;; No need to change of venv if they are the same
-                                     (elpy-rpc-get-or-create-virtualenv)))
             (same-venv (file-equal-p current-environment
+                                     (elpy-rpc-get-or-create-virtualenv)))
             current-environment-is-deactivated)
        (when (not same-venv)
          (pyvenv-activate (elpy-rpc-get-or-create-virtualenv))
