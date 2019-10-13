@@ -3405,16 +3405,17 @@ docstring body."
      ;; flymake modeline is quite useful for emacs > 26.1
      (when (version< emacs-version "26.1")
        (elpy-modules-remove-modeline-lighter 'flymake-mode))
-     (if (and (member 'elpy-module-folding elpy-modules)
-              elpy-folding-fringe-indicators)
-         (setq-local flymake-fringe-indicator-position 'right-fringe)
-       (setq-local flymake-fringe-indicator-position 'left-fringe))
      ;; Add our initializer function.
      (unless (version<= "26.1" emacs-version)
        (add-to-list 'flymake-allowed-file-name-masks
                     '("\\.py\\'" elpy-flymake-python-init))))
 
     (`buffer-init
+     ;; Avoid fringes clash between flymake and folding indicators
+     (if (and (member 'elpy-module-folding elpy-modules)
+              elpy-folding-fringe-indicators)
+         (setq-local flymake-fringe-indicator-position 'right-fringe)
+       (setq-local flymake-fringe-indicator-position 'left-fringe))
      ;; Set this for `elpy-check' command
      (setq-local python-check-command elpy-syntax-check-command)
      ;; For emacs > 26.1, python.el natively supports flymake,
